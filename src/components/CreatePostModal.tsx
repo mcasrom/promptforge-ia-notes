@@ -23,11 +23,22 @@ export default function CreatePostModal({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(['prompts']);
+  const [customTag, setCustomTag] = useState('');
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen || !currentUser) return null;
+
+  const handleAddCustomTag = () => {
+    const clean = customTag.trim().toLowerCase().replace(/[^a-zA-Z0-9-_]/g, '');
+    if (clean) {
+      if (!selectedTags.includes(clean)) {
+        setSelectedTags([...selectedTags, clean]);
+      }
+      setCustomTag('');
+    }
+  };
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -72,7 +83,9 @@ export default function CreatePostModal({
     } finally {
       setLoading(false);
     }
-  };  return (
+  };
+
+  return (
     <div id="create-post-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -183,12 +196,17 @@ export default function CreatePostModal({
           </div>
 
           {/* Tags selection */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-2 font-display">
-              Select Tags
-            </label>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-zinc-400 font-display">
+                Tags
+              </label>
+              <span className="text-[10px] text-zinc-500 italic">Select below or add your own</span>
+            </div>
+            
+            {/* Tag suggestions / Active tags list */}
             <div className="flex flex-wrap gap-2">
-              {AVAILABLE_TAGS.map((tag) => {
+              {Array.from(new Set([...AVAILABLE_TAGS, ...selectedTags])).map((tag) => {
                 const isSelected = selectedTags.includes(tag);
                 return (
                   <button
@@ -205,6 +223,30 @@ export default function CreatePostModal({
                   </button>
                 );
               })}
+            </div>
+
+            {/* Custom Tag Input */}
+            <div className="flex gap-2 max-w-xs pt-1">
+              <input
+                type="text"
+                value={customTag}
+                onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9-_]/g, ''))}
+                placeholder="Type tag (e.g. bobo)"
+                className="w-full px-3 py-1.5 bg-zinc-900/50 border border-[#27272a] focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-lg text-xs text-zinc-200 placeholder-zinc-600 outline-none transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomTag();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleAddCustomTag}
+                className="py-1.5 px-3 bg-zinc-800 hover:bg-zinc-700 border border-[#27272a] text-xs font-medium text-zinc-300 rounded-lg transition-colors cursor-pointer shrink-0"
+              >
+                + Add
+              </button>
             </div>
           </div>
 
