@@ -1,0 +1,18 @@
+{
+  "short_name": "AI Notes",
+  "name": "AI Notes - PromptForge Community",
+  "description": "An agile platform to share, search, and vote on prompts, best practices, and interact with the AI community.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "display": "standalone",
+  "orientation": "portrait"
+}

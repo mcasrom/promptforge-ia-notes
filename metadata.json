@@ -1,0 +1,6 @@
+{
+  "name": "AI Notes",
+  "description": "An agile platform to share, search, and vote on prompts, best practices, and interact with the AI community.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
