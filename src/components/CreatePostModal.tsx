@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { X, Sparkles, HelpCircle, Eye, Edit2 } from 'lucide-react';
-import { motion } from 'motion/react';
-import ReactMarkdown from 'react-markdown';
+import { X, Sparkles, Send, Eye, PenTool } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { apiFetch } from '../utils';
-import { Post, User } from '../types';
+import { User, Post } from '../types';
+import Markdown from 'react-markdown';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -14,12 +14,7 @@ interface CreatePostModalProps {
 
 const AVAILABLE_TAGS = ['prompts', 'best-practices', 'ollama', 'errors', 'general'];
 
-export default function CreatePostModal({
-  isOpen,
-  onClose,
-  currentUser,
-  onPostCreated,
-}: CreatePostModalProps) {
+export default function CreatePostModal({ isOpen, onClose, currentUser, onPostCreated }: CreatePostModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(['prompts']);
@@ -52,34 +47,33 @@ export default function CreatePostModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
     if (!title.trim() || !content.trim()) {
-      setError('Please fill in the title and content');
+      setError('Title and content are required.');
       return;
     }
 
     setLoading(true);
+    setError(null);
 
     try {
-      const newPost = await apiFetch<Post>('/api/posts', {
+      const newPost = await apiFetch('/api/posts', {
         method: 'POST',
         body: JSON.stringify({
-          title,
-          content,
+          title: title.trim(),
+          content: content.trim(),
           tags: selectedTags,
-          userId: currentUser.id,
         }),
       });
       onPostCreated(newPost);
-      // Reset
+      // Reset form
       setTitle('');
       setContent('');
       setSelectedTags(['prompts']);
+      setCustomTag('');
       setActiveTab('write');
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Error saving note');
+      setError(err.message || 'Failed to create post');
     } finally {
       setLoading(false);
     }
@@ -88,29 +82,29 @@ export default function CreatePostModal({
   return (
     <div id="create-post-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.3 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
         id="create-post-container"
-        className="relative w-full max-w-2xl bg-[#121214] border border-[#27272a] rounded-2xl overflow-hidden my-8"
+        className="relative w-full max-w-2xl bg-[#121214] border border-[#27272a] rounded-2xl glow-blue my-8"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#27272a]">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-400" />
-            <span className="font-display font-bold text-lg text-zinc-100">Create New Note or Prompt</span>
+            <span className="font-display font-bold text-lg text-zinc-100">Share AI Knowledge</span>
           </div>
           <button
             onClick={onClose}
-            id="close-create-post"
+            id="close-create-post-modal"
             className="p-1 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content Form */}
+        {/* Content & Inputs */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
             <div id="create-post-error" className="p-3 text-xs bg-rose-950/30 border border-rose-500/20 text-rose-300 rounded-lg">
@@ -118,46 +112,46 @@ export default function CreatePostModal({
             </div>
           )}
 
-          {/* Title */}
+          {/* Title Input */}
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1.5 font-display">
-              Descriptive Title
+            <label className="block text-xs font-medium text-zinc-400 mb-2 font-display">
+              Post Title
             </label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Ultra-efficient System Prompt to translate COBOL to Rust"
+              placeholder="e.g., How to bypass rate-limiting with Ollama and key parameters"
               className="w-full px-4 py-2.5 bg-zinc-900/50 border border-[#27272a] focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors"
             />
           </div>
 
-          {/* Editor & Preview Tabs */}
+          {/* Markdown Content Section with Write/Preview Tabs */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex justify-between items-center mb-2">
               <label className="block text-xs font-medium text-zinc-400 font-display">
-                Content (Supports Full Markdown)
+                Content (Markdown supported)
               </label>
-              <div className="flex bg-zinc-900 p-0.5 rounded-lg border border-[#27272a]">
+              <div className="flex bg-zinc-900/80 border border-[#27272a] rounded-lg p-0.5">
                 <button
                   type="button"
                   onClick={() => setActiveTab('write')}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     activeTab === 'write'
-                      ? 'bg-zinc-850 text-zinc-100 shadow-sm'
+                      ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
+                  <PenTool className="w-3.5 h-3.5" />
                   <span>Write</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('preview')}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                     activeTab === 'preview'
-                      ? 'bg-zinc-850 text-zinc-100 shadow-sm'
+                      ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
@@ -167,32 +161,27 @@ export default function CreatePostModal({
               </div>
             </div>
 
-            {activeTab === 'write' ? (
-              <div className="relative">
+            <div className="min-h-[200px] border border-[#27272a] bg-zinc-950/40 rounded-xl overflow-hidden">
+              {activeTab === 'write' ? (
                 <textarea
                   required
-                  rows={8}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder={`Describe your note or write your prompt block. You can use bold, lists, and code blocks, for example:\n\n### My Prompt:\n\`\`\`markdown\nAct as an expert in...\n\`\`\``}
-                  className="w-full p-4 bg-zinc-900/50 border border-[#27272a] focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors font-mono resize-y"
+                  placeholder="### My Approach&#10;Write down your prompt structures, configurations, or error resolutions here...&#10;&#10;```bash&#10;ollama run deepseek-coder:6.7b&#10;```"
+                  className="w-full min-h-[220px] p-4 bg-transparent text-sm text-zinc-300 placeholder-zinc-600 outline-none resize-y"
                 />
-                <div className="absolute right-3 bottom-3 flex items-center gap-1 text-[10px] text-zinc-600 font-mono pointer-events-none">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>Markdown enabled</span>
+              ) : (
+                <div className="p-5 prose prose-invert max-w-none text-zinc-300 text-sm overflow-y-auto max-h-[300px]">
+                  {content.trim() ? (
+                    <div className="markdown-body">
+                      <Markdown>{content}</Markdown>
+                    </div>
+                  ) : (
+                    <span className="text-zinc-600 italic">Nothing to preview yet. Write some markdown content first!</span>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="w-full min-h-[200px] max-h-[350px] p-4 bg-zinc-900/30 border border-[#27272a]/80 rounded-lg overflow-y-auto prose-custom">
-                {content.trim() ? (
-                  <ReactMarkdown>{content}</ReactMarkdown>
-                ) : (
-                  <p className="text-zinc-600 text-sm font-mono italic">
-                    Nothing to preview yet. Type some text or code...
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Tags selection */}
@@ -213,10 +202,10 @@ export default function CreatePostModal({
                     key={tag}
                     type="button"
                     onClick={() => handleTagToggle(tag)}
-                    className={`py-1.5 px-3.5 rounded-lg border text-xs font-display font-medium cursor-pointer transition-all ${
+                    className={`py-1 px-2.5 rounded text-xs font-mono font-medium transition-colors cursor-pointer border ${
                       isSelected
-                        ? 'bg-blue-500/10 border-blue-500 text-blue-300 shadow-sm shadow-blue-500/5'
-                        : 'bg-zinc-900/50 border-[#27272a] text-zinc-400 hover:border-zinc-750 hover:text-zinc-300'
+                        ? 'bg-blue-600/15 border-blue-500 text-blue-400'
+                        : 'bg-[#18181b] border-[#27272a] text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
                     }`}
                   >
                     #{tag}
@@ -251,20 +240,22 @@ export default function CreatePostModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#27272a]">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#27272a]">
             <button
               type="button"
               onClick={onClose}
-              className="py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-[#27272a] text-sm font-medium text-zinc-300 rounded-lg transition-colors cursor-pointer"
+              className="py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-[#27272a] text-xs font-semibold text-zinc-400 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="py-2 px-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-sm font-semibold text-white rounded-lg shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all cursor-pointer font-sans"
+              id="btn-submit-post"
+              className="flex items-center gap-2 py-2 px-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-bold text-white rounded-lg shadow-md transition-all cursor-pointer"
             >
-              {loading ? 'Publishing...' : 'Publish Note'}
+              <Send className="w-3.5 h-3.5" />
+              <span>{loading ? 'Publishing...' : 'Publish Post'}</span>
             </button>
           </div>
         </form>
