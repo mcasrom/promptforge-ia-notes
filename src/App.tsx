@@ -154,31 +154,6 @@ export default function App() {
     triggerToast(`Welcome back, ${user.name}!`, 'success');
   };
 
-  const handleDirectLogin = async (role: 'admin' | 'privileged' | 'user') => {
-    try {
-      let email = '';
-      let password = '';
-      if (role === 'admin') {
-        email = 'admin@ianotes.com';
-        password = 'admin123';
-      } else if (role === 'privileged') {
-        email = 'privileged@ianotes.com';
-        password = 'privileged123';
-      } else {
-        email = 'user@ianotes.com';
-        password = 'user123';
-      }
-
-      const response = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-      handleLoginSuccess(response.user);
-    } catch (err: any) {
-      triggerToast(err.message || 'Direct login failed', 'error');
-    }
-  };
-
   // Handle Logout
   const handleLogout = () => {
     setCurrentUser(null);
@@ -298,45 +273,7 @@ export default function App() {
       {/* Main Feed Container */}
       <main id="feed-section" className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 mt-16 space-y-8 relative z-10">
         
-        {/* Direct Demo Access Portal */}
-        {!currentUser && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5 md:p-6 bg-gradient-to-r from-blue-950/20 to-zinc-900 border border-blue-900/30 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" />
-              </div>
-              <div className="text-left">
-                <h4 className="font-display font-bold text-zinc-100 text-sm">Direct Demo Access Portal</h4>
-                <p className="text-xs text-zinc-400 mt-0.5">Select a pre-seeded developer profile to log in instantly (bypasses browser form/cookie blockers).</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
-              <button
-                onClick={() => handleDirectLogin('admin')}
-                className="flex-1 md:flex-initial py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-[#27272a] hover:border-zinc-700 rounded-xl text-zinc-300 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Admin (Full Access)
-              </button>
-              <button
-                onClick={() => handleDirectLogin('privileged')}
-                className="flex-1 md:flex-initial py-2 px-4 bg-blue-900/30 hover:bg-blue-900/50 border border-blue-800/40 hover:border-blue-700 rounded-xl text-blue-300 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Privileged Expert
-              </button>
-              <button
-                onClick={() => handleDirectLogin('user')}
-                className="flex-1 md:flex-initial py-2 px-4 bg-zinc-900 hover:bg-zinc-800 border border-[#27272a] hover:border-zinc-700 rounded-xl text-zinc-300 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Regular User (Santi)
-              </button>
-            </div>
-          </motion.div>
-        )}
-        
+
         {/* Custom logged in Workspace Greeting */}
         {currentUser && (
           <motion.div

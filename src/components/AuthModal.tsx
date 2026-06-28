@@ -68,22 +68,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     }, 1000);
   };
 
-  const handleQuickFill = (role: 'admin' | 'privileged' | 'user') => {
-    if (role === 'admin') {
-      setEmail('admin@ianotes.com');
-      setPassword('admin123');
-      setName('Admin AI Notes');
-    } else if (role === 'privileged') {
-      setEmail('privileged@ianotes.com');
-      setPassword('privileged123');
-      setName('Alex Expert');
-    } else {
-      setEmail('user@ianotes.com');
-      setPassword('user123');
-      setName('Santi PromptForge');
-    }
-  };
-
   return (
     <div id="auth-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
       <motion.div
@@ -200,43 +184,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
               {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Sign Up'}
             </button>
           </form>
-
-          {/* Quick Fills */}
-          <div className="mt-6 pt-5 border-t border-[#27272a]">
-            <span className="block text-[10px] font-mono text-zinc-500 tracking-wider uppercase mb-2">Quick Demo Access</span>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin')}
-                id="quick-fill-admin"
-                className="flex-1 py-1.5 px-2 bg-[#18181b] hover:bg-zinc-800 border border-[#27272a] rounded text-left text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-zinc-300 font-display">Admin</div>
-                <div className="text-[10px] text-zinc-500 font-mono">admin@ianotes.com</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('privileged')}
-                id="quick-fill-privileged"
-                className="flex-1 py-1.5 px-2 bg-blue-950/20 hover:bg-blue-950/40 border border-blue-900/30 hover:border-blue-700/40 rounded text-left text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-blue-300 font-display flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-blue-400" />
-                  <span>Privileged</span>
-                </div>
-                <div className="text-[10px] text-zinc-500 font-mono">privileged@ianotes.com</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('user')}
-                id="quick-fill-user"
-                className="flex-1 py-1.5 px-2 bg-[#18181b] hover:bg-zinc-800 border border-[#27272a] rounded text-left text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-bold text-zinc-300 font-display">Regular User</div>
-                <div className="text-[10px] text-zinc-500 font-mono">user@ianotes.com</div>
-              </button>
-            </div>
-          </div>
 
           <div className="mt-5 text-center">
             <button
