@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Sparkles, HelpCircle, Eye, Edit2 } from 'lucide-react';
+import { X, Sparkles, HelpCircle, Eye, Edit2, List, Loader2, RotateCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { apiFetch } from '../utils';
@@ -27,8 +27,42 @@ export default function CreatePostModal({
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [undoContent, setUndoContent] = useState<string | null>(null);
 
   if (!isOpen || !currentUser) return null;
+
+  const handleAIRewrite = async (type: 'improve' | 'bullets') => {
+    if (!content.trim()) {
+      setError('Por favor, escribe algo de texto primero para que la IA pueda procesarlo.');
+      return;
+    }
+    setError(null);
+    setAiLoading(true);
+    try {
+      const response = await apiFetch<{ result?: string; error?: string }>('/api/gemini/rewrite', {
+        method: 'POST',
+        body: JSON.stringify({ content, type }),
+      });
+      if (response.error) {
+        setError(response.error);
+      } else if (response.result) {
+        setUndoContent(content); // Guardar para poder deshacer
+        setContent(response.result);
+      }
+    } catch (err: any) {
+      setError('Error al conectar con el asistente de IA: ' + err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleUndoAI = () => {
+    if (undoContent !== null) {
+      setContent(undoContent);
+      setUndoContent(null);
+    }
+  };
 
   const handleAddCustomTag = () => {
     const clean = customTag.trim().toLowerCase().replace(/[^a-zA-Z0-9-_]/g, '');
@@ -172,18 +206,68 @@ export default function CreatePostModal({
             </div>
 
             {activeTab === 'write' ? (
-              <div className="relative">
-                <textarea
-                  required
-                  rows={8}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder={`Describe your note or write your prompt block. You can use bold, lists, and code blocks, for example:\n\n### My Prompt:\n\`\`\`markdown\nAct as an expert in...\n\`\`\``}
-                  className="w-full p-4 bg-zinc-900/50 border border-[#27272a] focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors font-mono resize-y"
-                />
-                <div className="absolute right-3 bottom-3 flex items-center gap-1 text-[10px] text-zinc-600 font-mono pointer-events-none">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>Markdown enabled</span>
+              <div className="space-y-2">
+                <div className="relative">
+                  <textarea
+                    required
+                    rows={8}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder={`Describe your note or write your prompt block. You can use bold, lists, and code blocks, for example:\n\n### My Prompt:\n\`\`\`markdown\nAct as an expert in...\n\`\`\``}
+                    className="w-full p-4 bg-zinc-900/50 border border-[#27272a] focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-colors font-mono resize-y"
+                  />
+                  <div className="absolute right-3 bottom-3 flex items-center gap-1 text-[10px] text-zinc-600 font-mono pointer-events-none">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span>Markdown enabled</span>
+                  </div>
+                </div>
+
+                {/* AI Assistant Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181b]/60 p-2.5 rounded-lg border border-[#27272a]/60">
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-display">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Asistente de Redacción IA:</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {undoContent !== null && (
+                      <button
+                        type="button"
+                        onClick={handleUndoAI}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 rounded-md transition-all cursor-pointer"
+                        title="Deshacer los cambios de la IA"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Deshacer</span>
+                      </button>
+                    )}
+
+                    {aiLoading ? (
+                      <span className="flex items-center gap-1.5 px-3 py-1 text-xs text-blue-400 font-medium">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Generando...
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleAIRewrite('improve')}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 rounded-md transition-all cursor-pointer"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>Corregir / Mejorar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAIRewrite('bullets')}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-md transition-all cursor-pointer"
+                        >
+                          <List className="w-3 h-3" />
+                          <span>Convertir a Lista</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (

@@ -2,8 +2,22 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
+import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
+
+dotenv.config();
 
 const PORT = 3000;
+
+// Initialize Gemini client safely
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || "",
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 const DB_PATH = path.join(process.cwd(), "src", "db.json");
 
 // Define basic structural interfaces for the file database
@@ -475,6 +489,41 @@ async function startServer() {
     });
 
     res.json(populatedPosts);
+  });
+
+  // Rewrite / Correct with Gemini AI
+  app.post("/api/gemini/rewrite", async (req, res) => {
+    const { content, type } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: "No content provided" });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+      return res.status(500).json({ 
+        error: "La clave GEMINI_API_KEY no está configurada en el servidor. Por favor configúrala en Settings > Secrets para usar la IA." 
+      });
+    }
+
+    try {
+      let prompt = "";
+      if (type === "bullets") {
+        prompt = `Convierte las siguientes ideas o texto en una lista de viñetas claras y bien estructuradas en Markdown (usando asteriscos *). Asegúrate de agregar saltos de línea correctos para que cada viñeta esté en su propia línea. Mantén el tono profesional e informativo. No agregues saludos ni explicaciones, solo devuelve el Markdown resultante:\n\n${content}`;
+      } else {
+        prompt = `Corrige la ortografía, la gramática y mejora la redacción del siguiente texto en formato Markdown. Optimiza la estructura para que sea fácil y agradable de leer, manteniendo intacto el significado original. Si detectas listas (bullets) o bloques de código, consérvalos y asegúrate de que tengan el formato Markdown adecuado con saltos de línea limpios. Devuelve únicamente el texto final mejorado, sin introducciones ni comentarios adicionales:\n\n${content}`;
+      }
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      const resultText = response.text || "";
+      res.json({ result: resultText.trim() });
+    } catch (error: any) {
+      console.error("Gemini API error:", error);
+      res.status(500).json({ error: "Error al procesar con Gemini: " + error.message });
+    }
   });
 
   // Create post
