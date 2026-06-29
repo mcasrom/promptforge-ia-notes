@@ -30,6 +30,12 @@ export default function PostDetailsModal({
   onDeletePost,
   onRatePost,
 }: PostDetailsModalProps) {
+  const getUserId = () => currentUser?.id || 
+                          (currentUser as any)?.userId || 
+                          (currentUser as any)?._id || 
+                          localStorage.getItem('ia_notes_user_id') || 
+                          '';
+
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentContent, setCommentContent] = useState('');
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
@@ -48,10 +54,11 @@ export default function PostDetailsModal({
 
   // Sync state
   useEffect(() => {
-    if (currentUser) {
-      setLiked(post.likedByUserIds.includes(currentUser.id));
-      if (post.ratings && post.ratings[currentUser.id]) {
-        setUserRating(post.ratings[currentUser.id]);
+    const currentId = getUserId();
+    if (currentUser || currentId) {
+      setLiked(post.likedByUserIds.includes(currentId));
+      if (post.ratings && post.ratings[currentId]) {
+        setUserRating(post.ratings[currentId]);
       } else {
         setUserRating(0);
       }
@@ -88,14 +95,15 @@ export default function PostDetailsModal({
 
   // Handle Post Like Toggle
   const handleLike = async () => {
-    if (!currentUser) {
+    const currentId = getUserId();
+    if (!currentUser && !currentId) {
       alert('You must log in to like this note');
       return;
     }
     try {
       const data = await apiFetch(`/api/posts/${post.id}/like`, {
         method: 'POST',
-        body: JSON.stringify({ userId: currentUser.id }),
+        body: JSON.stringify({ userId: currentId }),
       });
       setLiked(!liked);
       setLikesCount(data.likesCount);
@@ -107,7 +115,8 @@ export default function PostDetailsModal({
 
   // Handle Post Rating
   const handleRate = async (score: number) => {
-    if (!currentUser) {
+    const currentId = getUserId();
+    if (!currentUser && !currentId) {
       alert('You must log in to rate this prompt');
       return;
     }
@@ -115,7 +124,7 @@ export default function PostDetailsModal({
     try {
       const data = await apiFetch<any>(`/api/posts/${post.id}/rate`, {
         method: 'POST',
-        body: JSON.stringify({ userId: currentUser.id, score }),
+        body: JSON.stringify({ userId: currentId, score }),
       });
       setUserRating(score);
       setAvgRating(data.averageRating);
@@ -135,7 +144,8 @@ export default function PostDetailsModal({
   // Handle Comment creation
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
+    const currentId = getUserId();
+    if (!currentUser && !currentId) {
       alert('You must log in to comment');
       return;
     }
@@ -146,7 +156,7 @@ export default function PostDetailsModal({
         method: 'POST',
         body: JSON.stringify({
           content: commentContent,
-          userId: currentUser.id,
+          userId: currentId,
         }),
       });
       setComments([...comments, newComment]);
@@ -158,7 +168,8 @@ export default function PostDetailsModal({
 
   // Handle Reply creation
   const handleAddReply = async (parentId: string) => {
-    if (!currentUser) {
+    const currentId = getUserId();
+    if (!currentUser && !currentId) {
       alert('You must log in to reply');
       return;
     }
@@ -169,7 +180,7 @@ export default function PostDetailsModal({
         method: 'POST',
         body: JSON.stringify({
           content: replyContent,
-          userId: currentUser.id,
+          userId: currentId,
           parentId,
         }),
       });
@@ -202,13 +213,14 @@ export default function PostDetailsModal({
 
   // Handle Comment/Reply Deletion
   const handleDeleteComment = async (commentId: string) => {
-    if (!currentUser) return;
+    const currentId = getUserId();
+    if (!currentUser && !currentId) return;
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
       await apiFetch(`/api/comments/${commentId}`, {
         method: 'DELETE',
-        body: JSON.stringify({ userId: currentUser.id }),
+        body: JSON.stringify({ userId: currentId }),
       });
 
       // Remove comment from tree locally
@@ -234,7 +246,8 @@ export default function PostDetailsModal({
 
   // Recursive Comment Renderer
   const renderComment = (comment: Comment, depth = 0) => {
-    const isOwner = currentUser?.id === comment.userId;
+    const currentId = getUserId();
+    const isOwner = currentId === comment.userId;
     const isAdmin = currentUser?.role === 'admin';
     const canDelete = isOwner || isAdmin;
     const isReplying = replyingToId === comment.id;
