@@ -171,6 +171,31 @@ Luego corre \`ollama create mi-llama3 -f ./Modelfile\`. ¡La diferencia de preci
         "u-user-2": 3
       },
       createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), // 24 hours ago
+    },
+    {
+      id: "p-4",
+      title: "La Historia de GitHub: Del Código Compartido a la Era del Desarrollo con IA",
+      content: `GitHub nació en 2008 de la mano de Tom Preston-Werner, Chris Wanstrath, P. J. Hyett y Scott Chacon como una herramienta para simplificar el uso de Git y colaborar en proyectos de desarrollo de software.
+
+### Hitos fundamentales en la historia de GitHub:
+
+1. **La Fundación (2008):** Creado sobre Ruby on Rails, se convirtió rápidamente en el punto de encuentro definitivo para el código abierto, eliminando las fricciones de hospedar y compartir repositorios.
+2. **La Adquisición de Microsoft (2018):** Microsoft adquirió GitHub por $7.5 mil millones de dólares, marcando un giro histórico en el compromiso de la compañía con el ecosistema open source.
+3. **La Revolución de la IA con Copilot (2021-Presente):** En colaboración con OpenAI, GitHub lanzó Copilot, transformando los repositorios estáticos en espacios interactivos de codificación asistida.
+
+### Impacto de GitHub en la ingeniería de software moderna:
+- **El Pull Request:** Introdujo un estándar de revisión de código colaborativo y descentralizado.
+- **GitHub Actions (CI/CD):** Automatizó el ciclo de vida del software directamente desde el repositorio.
+- **Cultura de Colaboración Global:** Habilitó el desarrollo de proyectos críticos a nivel mundial de forma remota y transparente.`,
+      tags: ["best-practices", "prompts"],
+      userId: "u-user-2",
+      isFeatured: false,
+      likedByUserIds: [],
+      ratings: {
+        "u-admin": 5,
+        "u-privileged": 5
+      },
+      createdAt: new Date(Date.now() - 3600000 * 0.5).toISOString(), // 30 mins ago
     }
   ],
   comments: [
@@ -456,7 +481,9 @@ async function startServer() {
   app.post("/api/posts", (req, res) => {
     const { title, content, tags, userId } = req.body;
     if (!title || !content || !userId) {
-      return res.status(400).json({ error: "Faltan campos del post" });
+      return res.status(400).json({ 
+        error: `Faltan campos del post. Campos recibidos: title=${title ? "OK" : "Vacio"}, content=${content ? "OK" : "Vacio"}, userId=${userId || "NoEnviado"}` 
+      });
     }
 
     const db = readDB();
